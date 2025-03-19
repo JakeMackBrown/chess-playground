@@ -1,10 +1,10 @@
-// src/App.js
 import React from 'react';
 import ChessGame from './ChessGame';
+import './custom.css'; 
 
 function App() {
   return (
-    <div className="App">
+    <div className="container">
       <ChessGame />
     </div>
   );

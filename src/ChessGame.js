@@ -1,37 +1,48 @@
 // src/ChessGame.js
 import React, { useState } from 'react';
-import { Chessboard } from "react-chessboard";
-import { Chess } from "chess.js";
+import { Chessboard } from 'react-chessboard';
+import { Chess } from 'chess.js';
 
 export default function ChessGame() {
-  // Initialize the Chess game instance
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
+  const boardWidth = 600; // Adjust the board size as desired
 
-  // Function gets triggered when a piece is dropped
   function onDrop(sourceSquare, targetSquare) {
-    // Attempt the move, always promoting to queen for simplicity
-    const move = game.move({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: 'q',
-    });
+    try {
+      const move = game.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q', // Always promote to queen for simplicity
+      });
 
-    // Illegal move, return false to snap the piece back
-    if (move === null) return false;
-
-    // Update the board state
-    setFen(game.fen());
-    
-    // Future step: If move is legal, trigger your bot move here.
-    // For now, we simply update the board.
-    return true;
+      if (move === null) {
+        console.log("Illegal move attempted.");
+        return false;
+      }
+      
+      setFen(game.fen());
+      return move;
+    } catch (error) {
+      console.error("Error processing move:", error);
+      return false;
+    }
   }
 
   return (
-    <div style={{ width: "400px", margin: "0 auto" }}>
-      <h1>Chess Playground</h1>
-      <Chessboard position={fen} onPieceDrop={onDrop} />
+    <div>
+      <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>
+        Chess Playground
+      </h1>
+      <Chessboard
+        position={fen}
+        onPieceDrop={onDrop}
+        boardWidth={boardWidth}
+        boardStyle={{
+          borderRadius: '8px',
+          boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)',
+        }}
+      />
     </div>
   );
 }
