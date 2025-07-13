@@ -1,5 +1,5 @@
 // src/ChessGame.js
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
@@ -7,9 +7,12 @@ export default function ChessGame() {
   const [game, setGame] = useState(new Chess());
   const [fen, setFen] = useState(game.fen());
   const [status, setStatus] = useState("White to move");
-  const boardWidth = 600;
+  const [showUndo, setShowUndo] = useState(false);
+  const [undoTimer, setUndoTimer] = useState(3);
+  const undoInterval = useRef(null);
+  const lastFen = useRef(null);
 
-  function updateStatus() {
+  const updateStatus = () => {
     if (game.isCheckmate()) {
       setStatus(`Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} wins`);
     } else if (game.isStalemate()) {
@@ -19,54 +22,113 @@ export default function ChessGame() {
     } else {
       setStatus(`${game.turn() === 'w' ? 'White' : 'Black'} to move`);
     }
-  }
+  };
 
-  function onDrop(sourceSquare, targetSquare) {
+  const onPieceDrop = (sourceSquare, targetSquare) => {
+    // Save current FEN before move
+    lastFen.current = game.fen();
+
+    const piece = game.get(sourceSquare);
+    const promotionNeeded =
+      piece &&
+      piece.type === 'p' &&
+      ((piece.color === 'w' && targetSquare[1] === '8') ||
+        (piece.color === 'b' && targetSquare[1] === '1'));
+
+    let move;
     try {
-      const move = game.move({
+      move = game.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q',
+        promotion: promotionNeeded ? 'q' : undefined,
       });
-
-      if (move === null) {
-        console.log("Illegal move attempted.");
-        return false;
-      }
-
-      setFen(game.fen());
-      updateStatus();
-      return move;
     } catch (error) {
-      console.error("Error processing move:", error);
+      // Invalid move caused an error, reject gracefully
       return false;
     }
-  }
 
-  function resetGame() {
+    if (move === null) return false;
+
+    setFen(game.fen());
+    updateStatus();
+
+    // Show undo option
+    setUndoTimer(3);
+    setShowUndo(true);
+
+    clearInterval(undoInterval.current);
+    undoInterval.current = setInterval(() => {
+      setUndoTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(undoInterval.current);
+          setShowUndo(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return move;
+  };
+
+  const handleUndo = () => {
+    if (!lastFen.current) return;
+
+    game.load(lastFen.current);
+    setFen(game.fen());
+    updateStatus();
+    setShowUndo(false);
+    clearInterval(undoInterval.current);
+  };
+
+  const resetGame = () => {
     const newGame = new Chess();
     setGame(newGame);
     setFen(newGame.fen());
     setStatus("White to move");
-  }
+    setShowUndo(false);
+    clearInterval(undoInterval.current);
+  };
+
+  useEffect(() => {
+    return () => {
+      clearInterval(undoInterval.current); // Cleanup on unmount
+    };
+  }, []);
 
   return (
-    <div>
-      <h1 style={{ textAlign: 'center', marginBottom: '10px' }}>Chess Playground</h1>
-      <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '10px' }}>
-        {status}
-      </p>
+    <div onContextMenu={(e) => e.preventDefault()}>
+      <h1 style={{ textAlign: 'center' }}>Chess Playground</h1>
+      <p style={{ textAlign: 'center', marginBottom: '10px' }}>{status}</p>
+
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <Chessboard
           position={fen}
-          onPieceDrop={onDrop}
-          boardWidth={boardWidth}
-          boardStyle={{
-            borderRadius: '8px',
-            boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)',
-          }}
+          onPieceDrop={onPieceDrop}
+          boardWidth={600}
         />
       </div>
+
+      {showUndo && (
+        <div style={{ textAlign: 'center', marginTop: '15px' }}>
+          <button
+            onClick={handleUndo}
+            style={{
+              padding: '10px 20px',
+              fontSize: '1rem',
+              borderRadius: '5px',
+              border: 'none',
+              backgroundColor: '#f44336',
+              color: '#fff',
+              cursor: 'pointer',
+              marginRight: '10px'
+            }}
+          >
+            Undo Move ({undoTimer})
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
         <button
           onClick={resetGame}
