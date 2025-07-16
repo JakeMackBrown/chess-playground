@@ -19,9 +19,26 @@ export default function ChessGame() {
     engine.current.onmessage = (event) => {
       const message = event.data;
       if (message.startsWith('bestmove')) {
-        const bestMove = message.split(' ')[1];
-        pendingEngineMove.current = bestMove;
-        makeEngineMove();
+        const moveStr = message.split(' ')[1];
+        pendingEngineMove.current = moveStr;
+
+        if (!moveStr || moveStr === '(none)') return;
+
+        const from = moveStr.substring(0, 2);
+        const to = moveStr.substring(2, 4);
+        const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
+
+        const legalMove = game.move({ from, to, promotion });
+
+        if (legalMove === null) {
+          console.error('Illegal engine move:', { from, to, promotion });
+          return;
+        }
+
+        setFen(game.fen());
+        updateStatus(game);
+        lastFen.current = null;
+        setIsAiThinking(false);
       }
     };
 
@@ -31,7 +48,7 @@ export default function ChessGame() {
     return () => {
       engine.current.terminate();
     };
-  }, []);
+  }, []); // only run on mount
 
   const onPieceDrop = (sourceSquare, targetSquare) => {
     if (isAiThinking || game.isGameOver()) return false;
@@ -41,13 +58,13 @@ export default function ChessGame() {
     const move = game.move({
       from: sourceSquare,
       to: targetSquare,
-      promotion: 'q', // always queen for now
+      promotion: 'q',
     });
 
     if (move === null) return false;
 
     setFen(game.fen());
-    updateStatus();
+    updateStatus(game);
 
     if (!game.isGameOver()) {
       setIsAiThinking(true);
@@ -60,35 +77,18 @@ export default function ChessGame() {
   const requestEngineMove = () => {
     const currentFen = game.fen();
     engine.current.postMessage(`position fen ${currentFen}`);
-    engine.current.postMessage('go depth 10'); // Adjust for difficulty/speed
+    engine.current.postMessage('go depth 10');
   };
 
-  const makeEngineMove = () => {
-    setIsAiThinking(false);
-
-    const moveStr = pendingEngineMove.current;
-    if (!moveStr || moveStr === '(none)') return;
-
-    const from = moveStr.substring(0, 2);
-    const to = moveStr.substring(2, 4);
-    const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
-
-    game.move({ from, to, promotion });
-    setFen(game.fen());
-    updateStatus();
-
-    lastFen.current = null;
-  };
-
-  const updateStatus = () => {
-    if (game.isCheckmate()) {
-      setStatus(`Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} wins`);
-    } else if (game.isStalemate()) {
+  const updateStatus = (chessInstance) => {
+    if (chessInstance.isCheckmate()) {
+      setStatus(`Checkmate! ${chessInstance.turn() === 'w' ? 'Black' : 'White'} wins`);
+    } else if (chessInstance.isStalemate()) {
       setStatus('Stalemate!');
-    } else if (game.inCheck()) {
-      setStatus(`${game.turn() === 'w' ? 'White' : 'Black'} is in check`);
+    } else if (chessInstance.inCheck()) {
+      setStatus(`${chessInstance.turn() === 'w' ? 'White' : 'Black'} is in check`);
     } else {
-      setStatus(`${game.turn() === 'w' ? 'White' : 'Black'} to move`);
+      setStatus(`${chessInstance.turn() === 'w' ? 'White' : 'Black'} to move`);
     }
   };
 
@@ -99,7 +99,6 @@ export default function ChessGame() {
     setStatus('White to move');
     lastFen.current = null;
 
-    // Ask AI to move if it's black's turn to start
     if (newGame.turn() === 'b') {
       setIsAiThinking(true);
       requestEngineMove();
