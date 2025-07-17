@@ -51,28 +51,34 @@ export default function ChessGame() {
   }, []); // only run on mount
 
   const onPieceDrop = (sourceSquare, targetSquare) => {
-    if (isAiThinking || game.isGameOver()) return false;
+  const piece = game.get(sourceSquare);
 
-    lastFen.current = game.fen();
+  // Check if it's a pawn about to promote
+  const isPromotion =
+    piece &&
+    piece.type === 'p' &&
+    ((piece.color === 'w' && targetSquare[1] === '8') ||
+     (piece.color === 'b' && targetSquare[1] === '1'));
 
-    const move = game.move({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: 'q',
-    });
+  const move = game.move({
+    from: sourceSquare,
+    to: targetSquare,
+    ...(isPromotion && { promotion: 'q' }) // Only include promotion when necessary
+  });
 
-    if (move === null) return false;
+  if (move === null) {
+    console.warn('Illegal move attempted:', { from: sourceSquare, to: targetSquare });
+    return false;
+  }
 
-    setFen(game.fen());
-    updateStatus(game);
+  setFen(game.fen());
 
-    if (!game.isGameOver()) {
-      setIsAiThinking(true);
-      requestEngineMove();
-    }
+  engine.current.postMessage(`position fen ${game.fen()}`);
+  engine.current.postMessage('go depth 15');
 
-    return true;
-  };
+  return true;
+};
+
 
   const requestEngineMove = () => {
     const currentFen = game.fen();
