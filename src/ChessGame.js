@@ -1,3 +1,9 @@
+// Observed bugs/areas for improvement: 
+// error screen on invalid moves, 
+// lack of notifications (for checkmating or possible optional helpful tips for potential moves),
+// should allow toggling AI on/off or adjusting difficulty,
+// css improvements
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
