@@ -34,12 +34,19 @@ export default function ChessGame() {
         const to = moveStr.substring(2, 4);
         const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
 
-        const legalMove = game.move({ from, to, promotion });
+        const legalMoves = game.moves({ square: from, verbose: true });
 
-        if (legalMove === null) {
-          console.error('Illegal engine move:', { from, to, promotion });
+        const moveExists = legalMoves.some(
+          (move) => move.to === to
+        );
+
+        if (!moveExists) {
+          console.error('Engine attempted illegal move:', { from, to });
           return;
         }
+
+        game.move({ from, to, promotion });
+
 
         setFen(game.fen());
         updateStatus(game);
@@ -57,33 +64,48 @@ export default function ChessGame() {
   }, []); // only run on mount
 
   const onPieceDrop = (sourceSquare, targetSquare) => {
-  const piece = game.get(sourceSquare);
+  // 1️⃣ Get all legal moves from that square
+  const legalMoves = game.moves({ square: sourceSquare, verbose: true });
 
-  // Check if it's a pawn about to promote
+  // 2️⃣ Check if any legal move matches the target square
+  const moveExists = legalMoves.some(
+    (move) => move.to === targetSquare
+  );
+
+  // 3️⃣ If no legal move exists, reject silently
+  if (!moveExists) {
+    return false; // this makes the piece snap back
+  }
+
+  // 4️⃣ Handle promotion if needed
+  const piece = game.get(sourceSquare);
   const isPromotion =
     piece &&
     piece.type === 'p' &&
     ((piece.color === 'w' && targetSquare[1] === '8') ||
      (piece.color === 'b' && targetSquare[1] === '1'));
 
-  const move = game.move({
+  // 5️⃣ Now apply the move (safe because we validated)
+  game.move({
     from: sourceSquare,
     to: targetSquare,
-    ...(isPromotion && { promotion: 'q' }) // Only include promotion when necessary
+    ...(isPromotion && { promotion: 'q' })
   });
 
-  if (move === null) {
-    console.warn('Illegal move attempted:', { from: sourceSquare, to: targetSquare });
-    return false;
-  }
-
+  // 6️⃣ Update board + status
   setFen(game.fen());
+  updateStatus(game);
 
-  engine.current.postMessage(`position fen ${game.fen()}`);
-  engine.current.postMessage('go depth 15');
+  // 7️⃣ Ask engine to move
+  if (engine.current) {
+    setIsAiThinking(true);
+    engine.current.postMessage(`position fen ${game.fen()}`);
+    engine.current.postMessage('go depth 15');
+  }
 
   return true;
 };
+
 
 
   const requestEngineMove = () => {
