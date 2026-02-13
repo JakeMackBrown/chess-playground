@@ -13,6 +13,7 @@ export default function ChessGame() {
   const [fen, setFen] = useState(game.fen());
   const [status, setStatus] = useState('White to move');
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
 
   const engine = useRef(null);
   const pendingEngineMove = useRef(null);
@@ -64,6 +65,7 @@ export default function ChessGame() {
   }, []); // only run on mount
 
   const onPieceDrop = (sourceSquare, targetSquare) => {
+  if (gameOver) return false;
   // 1️⃣ Get all legal moves from that square
   const legalMoves = game.moves({ square: sourceSquare, verbose: true });
 
@@ -114,19 +116,33 @@ export default function ChessGame() {
     engine.current.postMessage('go depth 10');
   };
 
-  const updateStatus = (chessInstance) => {
-    if (chessInstance.isCheckmate()) {
-      setStatus(`Checkmate! ${chessInstance.turn() === 'w' ? 'Black' : 'White'} wins`);
-    } else if (chessInstance.isStalemate()) {
-      setStatus('Stalemate!');
-    } else if (chessInstance.inCheck()) {
-      setStatus(`${chessInstance.turn() === 'w' ? 'White' : 'Black'} is in check`);
-    } else {
-      setStatus(`${chessInstance.turn() === 'w' ? 'White' : 'Black'} to move`);
-    }
-  };
+const updateStatus = (chessInstance) => {
+  if (chessInstance.isCheckmate()) {
+    setStatus(
+      `Checkmate! ${chessInstance.turn() === 'w' ? 'Black' : 'White'} wins`
+    );
+    setGameOver(true);
+    setIsAiThinking(false);
+  } else if (chessInstance.isStalemate()) {
+    setStatus('Stalemate!');
+    setGameOver(true);
+    setIsAiThinking(false);
+  } else if (chessInstance.inCheck()) {
+    setStatus(
+      `${chessInstance.turn() === 'w' ? 'White' : 'Black'} is in check`
+    );
+    setGameOver(false);
+  } else {
+    setStatus(
+      `${chessInstance.turn() === 'w' ? 'White' : 'Black'} to move`
+    );
+    setGameOver(false);
+  }
+};
+
 
   const resetGame = () => {
+    setGameOver(false);
     const newGame = new Chess();
     setGame(newGame);
     setFen(newGame.fen());
@@ -147,7 +163,7 @@ export default function ChessGame() {
         position={fen}
         onPieceDrop={onPieceDrop}
         boardWidth={600}
-        arePiecesDraggable={!isAiThinking}
+        arePiecesDraggable={!isAiThinking && !gameOver}
       />
       <div style={{ marginTop: '1rem' }}>
         <button onClick={resetGame}>Reset Game</button>
