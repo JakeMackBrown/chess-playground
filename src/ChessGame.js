@@ -108,8 +108,6 @@ export default function ChessGame() {
   return true;
 };
 
-
-
   const requestEngineMove = () => {
     const currentFen = game.fen();
     engine.current.postMessage(`position fen ${currentFen}`);
@@ -140,7 +138,6 @@ const updateStatus = (chessInstance) => {
   }
 };
 
-
   const resetGame = () => {
     setGameOver(false);
     const newGame = new Chess();
@@ -159,6 +156,24 @@ const updateStatus = (chessInstance) => {
     <div style={{ textAlign: 'center' }}>
       <h1>Chess Playground</h1>
       <p>{status} {isAiThinking ? ' — AI thinking...' : ''}</p>
+      {gameOver && (
+  <div
+    style={{
+      backgroundColor: '#1f1f1f',
+      color: '#fff',
+      padding: '14px',
+      margin: '12px auto',
+      borderRadius: '10px',
+      width: 'fit-content',
+      fontWeight: 'bold',
+      fontSize: '18px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+    }}
+  >
+    {status}
+  </div>
+)}
+
       <Chessboard
         position={fen}
         onPieceDrop={onPieceDrop}
