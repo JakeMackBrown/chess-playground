@@ -178,6 +178,7 @@ const updateStatus = (chessInstance) => {
     setFen(newGame.fen());
     setStatus('White to move');
     lastFen.current = null;
+    setHighlightSquares({});
 
     if (newGame.turn() === 'b') {
       setIsAiThinking(true);
