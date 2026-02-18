@@ -13,6 +13,8 @@ export default function ChessGame() {
   const [status, setStatus] = useState('White to move');
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [highlightSquares, setHighlightSquares] = useState({});
+
 
   const engine = useRef(null);
   const pendingEngineMove = useRef(null);
@@ -50,6 +52,7 @@ export default function ChessGame() {
 
         setFen(game.fen());
         updateStatus(game);
+        updateCheckHighlight(game);
         lastFen.current = null;
         setIsAiThinking(false);
       }
@@ -96,6 +99,7 @@ export default function ChessGame() {
   // 6️⃣ Update board + status
   setFen(game.fen());
   updateStatus(game);
+  updateCheckHighlight(game);
 
   // 7️⃣ Ask engine to move
   if (engine.current) {
@@ -112,6 +116,36 @@ export default function ChessGame() {
     engine.current.postMessage(`position fen ${currentFen}`);
     engine.current.postMessage('go depth 10');
   };
+
+const updateCheckHighlight = (chessInstance) => {
+  if (!chessInstance.inCheck()) {
+    setHighlightSquares({});
+    return;
+  }
+
+  const board = chessInstance.board();
+  const turn = chessInstance.turn(); // king currently under attack
+
+  for (let rank = 0; rank < 8; rank++) {
+    for (let file = 0; file < 8; file++) {
+      const piece = board[rank][file];
+
+      if (piece && piece.type === 'k' && piece.color === turn) {
+        const square =
+          String.fromCharCode(97 + file) + (8 - rank);
+
+        setHighlightSquares({
+          [square]: {
+            backgroundColor: 'rgba(255, 0, 0, 0.45)',
+          },
+        });
+
+        return;
+      }
+    }
+  }
+};
+
 
 const updateStatus = (chessInstance) => {
   if (chessInstance.isCheckmate()) {
@@ -178,6 +212,7 @@ const updateStatus = (chessInstance) => {
         onPieceDrop={onPieceDrop}
         boardWidth={600}
         arePiecesDraggable={!isAiThinking && !gameOver}
+        customSquareStyles={highlightSquares}
       />
       <div style={{ marginTop: '1rem' }}>
         <button onClick={resetGame}>Reset Game</button>
