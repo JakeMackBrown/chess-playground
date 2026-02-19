@@ -19,6 +19,7 @@ export default function ChessGame() {
   const engine = useRef(null);
   const pendingEngineMove = useRef(null);
   const lastFen = useRef(null);
+  const requestingHint = useRef(false);
 
   // Start Stockfish engine
   useEffect(() => {
@@ -35,6 +36,18 @@ export default function ChessGame() {
         const from = moveStr.substring(0, 2);
         const to = moveStr.substring(2, 4);
         const promotion = moveStr.length > 4 ? moveStr[4] : undefined;
+
+        // ===== HINT MODE =====
+        if (requestingHint.current) {
+          requestingHint.current = false;
+
+        setHighlightSquares({
+          [from]: { backgroundColor: 'rgba(0, 120, 255, 0.6)' },
+          [to]: { backgroundColor: 'rgba(0, 120, 255, 0.6)' },
+        });
+
+      return; // IMPORTANT: stop engine from making a move
+}
 
         const legalMoves = game.moves({ square: from, verbose: true });
 
@@ -68,6 +81,9 @@ export default function ChessGame() {
 
   const onPieceDrop = (sourceSquare, targetSquare) => {
   if (gameOver) return false;
+
+  setHighlightSquares({});
+
   // 1️⃣ Get all legal moves from that square
   const legalMoves = game.moves({ square: sourceSquare, verbose: true });
 
@@ -116,6 +132,15 @@ export default function ChessGame() {
     engine.current.postMessage(`position fen ${currentFen}`);
     engine.current.postMessage('go depth 10');
   };
+
+const requestHint = () => {
+  if (!engine.current || gameOver || isAiThinking) return;
+
+  requestingHint.current = true;
+
+  engine.current.postMessage(`position fen ${game.fen()}`);
+  engine.current.postMessage('go depth 12');
+};
 
 const updateCheckHighlight = (chessInstance) => {
   if (!chessInstance.inCheck()) {
@@ -217,6 +242,8 @@ const updateStatus = (chessInstance) => {
       />
       <div style={{ marginTop: '1rem' }}>
         <button onClick={resetGame}>Reset Game</button>
+        <button onClick={requestHint} 
+        style={{ marginLeft: '10px' }}>Hint</button>
       </div>
     </div>
   );
