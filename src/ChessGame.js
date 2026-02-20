@@ -14,6 +14,7 @@ export default function ChessGame() {
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [highlightSquares, setHighlightSquares] = useState({});
+  const [difficulty] = useState(10); // 0–20 (10 = medium)
 
 
   const engine = useRef(null);
@@ -72,6 +73,7 @@ export default function ChessGame() {
     };
 
     engine.current.postMessage('uci');
+    engine.current.postMessage(`setoption name Skill Level value ${difficulty}`);
     engine.current.postMessage('isready');
 
     return () => {
