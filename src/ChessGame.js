@@ -14,8 +14,15 @@ export default function ChessGame() {
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [highlightSquares, setHighlightSquares] = useState({});
-  const [difficulty] = useState(10); // 0–20 (10 = medium)
+  const [difficulty, setDifficulty] = useState(10); // 0–20 (10 = medium)
 
+  useEffect(() => {
+  if (!engine.current) return;
+
+  engine.current.postMessage(
+    `setoption name Skill Level value ${difficulty}`
+  );
+}, [difficulty]);
 
   const engine = useRef(null);
   const pendingEngineMove = useRef(null);
@@ -243,10 +250,26 @@ const updateStatus = (chessInstance) => {
         customSquareStyles={highlightSquares}
       />
       <div style={{ marginTop: '1rem' }}>
-        <button onClick={resetGame}>Reset Game</button>
-        <button onClick={requestHint} 
-        style={{ marginLeft: '10px' }}>Hint</button>
-      </div>
+  <button onClick={resetGame}>Reset Game</button>
+
+  <button
+    onClick={requestHint}
+    style={{ marginLeft: '10px' }}
+  >
+    Hint
+  </button>
+
+  <select
+    value={difficulty}
+    onChange={(e) => setDifficulty(Number(e.target.value))}
+    style={{ marginLeft: '10px', padding: '4px' }}
+    >
+      <option value={5}>Easy</option>
+      <option value={10}>Medium</option>
+      <option value={15}>Hard</option>
+      <option value={20}>Impossible</option>
+    </select>
     </div>
+  </div>
   );
 }
