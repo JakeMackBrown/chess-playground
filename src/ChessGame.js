@@ -206,6 +206,11 @@ const updateStatus = (chessInstance) => {
 };
 
   const resetGame = () => {
+    if (engine.current) {
+      engine.current.postMessage("stop");
+      engine.current.postMessage("ucinewgame");
+    }
+    
     setGameOver(false);
     const newGame = new Chess();
     setGame(newGame);
