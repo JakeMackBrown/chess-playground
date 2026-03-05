@@ -8,8 +8,8 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 
 export default function ChessGame() {
-  const [game, setGame] = useState(new Chess());
-  const [fen, setFen] = useState(game.fen());
+  const gameRef = useRef(new Chess());
+  const [fen, setFen] = useState(gameRef.current.fen());
   const [status, setStatus] = useState('White to move');
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -57,7 +57,7 @@ export default function ChessGame() {
       return; // IMPORTANT: stop engine from making a move
 }
 
-        const legalMoves = game.moves({ square: from, verbose: true });
+        const legalMoves = gameRef.current.moves({ square: from, verbose: true });
 
         const moveExists = legalMoves.some(
           (move) => move.to === to
@@ -68,12 +68,12 @@ export default function ChessGame() {
           return;
         }
 
-        game.move({ from, to, promotion });
+        gameRef.current.move({ from, to, promotion });
 
 
-        setFen(game.fen());
-        updateStatus(game);
-        updateCheckHighlight(game);
+        setFen(gameRef.current.fen());
+        updateStatus(gameRef.current);
+        updateCheckHighlight(gameRef.current);
         lastFen.current = null;
         setIsAiThinking(false);
       }
@@ -94,7 +94,7 @@ export default function ChessGame() {
   setHighlightSquares({});
 
   // 1️⃣ Get all legal moves from that square
-  const legalMoves = game.moves({ square: sourceSquare, verbose: true });
+  const legalMoves = gameRef.current.moves({ square: sourceSquare, verbose: true });
 
   // 2️⃣ Check if any legal move matches the target square
   const moveExists = legalMoves.some(
@@ -107,7 +107,7 @@ export default function ChessGame() {
   }
 
   // 4️⃣ Handle promotion if needed
-  const piece = game.get(sourceSquare);
+  const piece = gameRef.current.get(sourceSquare);
   const isPromotion =
     piece &&
     piece.type === 'p' &&
@@ -115,21 +115,21 @@ export default function ChessGame() {
      (piece.color === 'b' && targetSquare[1] === '1'));
 
   // 5️⃣ Now apply the move (safe because we validated)
-  game.move({
+  gameRef.current.move({
     from: sourceSquare,
     to: targetSquare,
     ...(isPromotion && { promotion: 'q' })
   });
 
   // 6️⃣ Update board + status
-  setFen(game.fen());
-  updateStatus(game);
-  updateCheckHighlight(game);
+  setFen(gameRef.current.fen());
+  updateStatus(gameRef.current);
+  updateCheckHighlight(gameRef.current);
 
   // 7️⃣ Ask engine to move
   if (engine.current) {
     setIsAiThinking(true);
-    engine.current.postMessage(`position fen ${game.fen()}`);
+    engine.current.postMessage(`position fen ${gameRef.current.fen()}`);
     engine.current.postMessage('go depth 15');
   }
 
@@ -137,7 +137,7 @@ export default function ChessGame() {
 };
 
   const requestEngineMove = () => {
-    const currentFen = game.fen();
+    const currentFen = gameRef.current.fen();
     engine.current.postMessage(`position fen ${currentFen}`);
     engine.current.postMessage('go depth 10');
   };
@@ -147,7 +147,7 @@ const requestHint = () => {
 
   requestingHint.current = true;
 
-  engine.current.postMessage(`position fen ${game.fen()}`);
+  engine.current.postMessage(`position fen ${gameRef.current.fen()}`);
   engine.current.postMessage('go depth 12');
 };
 
@@ -205,25 +205,20 @@ const updateStatus = (chessInstance) => {
   }
 };
 
-  const resetGame = () => {
-    if (engine.current) {
-      engine.current.postMessage("stop");
-      engine.current.postMessage("ucinewgame");
-    }
-    
-    setGameOver(false);
-    const newGame = new Chess();
-    setGame(newGame);
-    setFen(newGame.fen());
-    setStatus('White to move');
-    lastFen.current = null;
-    setHighlightSquares({});
+const resetGame = () => {
+  if (engine.current) {
+    engine.current.postMessage("stop");
+    engine.current.postMessage("ucinewgame");
+  }
 
-    if (newGame.turn() === 'b') {
-      setIsAiThinking(true);
-      requestEngineMove();
-    }
-  };
+  gameRef.current = new Chess();
+
+  setFen(gameRef.current.fen());
+  setStatus("White to move");
+  setGameOver(false);
+  setIsAiThinking(false);
+  setHighlightSquares({});
+};
 
   return (
     <div style={{ textAlign: 'center' }}>
