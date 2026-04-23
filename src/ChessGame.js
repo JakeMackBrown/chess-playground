@@ -151,6 +151,27 @@ const requestHint = () => {
   engine.current.postMessage('go depth 12');
 };
 
+const highlightLegalMoves = (square) => {
+  const moves = gameRef.current.moves({
+    square,
+    verbose: true,
+  });
+
+  if (moves.length === 0) return;
+
+  const newHighlights = {};
+
+  moves.forEach((move) => {
+    newHighlights[move.to] = {
+      background:
+        'radial-gradient(circle, rgba(0,0,0,0.3) 20%, transparent 20%)',
+      borderRadius: '50%',
+    };
+  });
+
+  setHighlightSquares(newHighlights);
+};
+
 const updateCheckHighlight = (chessInstance) => {
   if (!chessInstance.inCheck()) {
     setHighlightSquares({});
@@ -245,6 +266,8 @@ const resetGame = () => {
       <Chessboard
         position={fen}
         onPieceDrop={onPieceDrop}
+        onSquareClick={(square) => highlightLegalMoves(square)}
+        onPieceDragBegin={(piece, sourceSquare) => highlightLegalMoves(sourceSquare)}
         boardWidth={600}
         arePiecesDraggable={!isAiThinking && !gameOver}
         customSquareStyles={highlightSquares}
