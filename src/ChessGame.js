@@ -15,6 +15,8 @@ export default function ChessGame() {
   const [gameOver, setGameOver] = useState(false);
   const [highlightSquares, setHighlightSquares] = useState({});
   const [difficulty, setDifficulty] = useState(10); // 0–20 (10 = medium)
+  const [moveHistory, setMoveHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
   useEffect(() => {
   if (!engine.current) return;
@@ -70,6 +72,8 @@ export default function ChessGame() {
 
         gameRef.current.move({ from, to, promotion });
 
+        setMoveHistory(gameRef.current.history({ verbose: true }));
+        setHistoryIndex(gameRef.current.history().length);
 
         setFen(gameRef.current.fen());
         updateStatus(gameRef.current);
@@ -120,6 +124,9 @@ export default function ChessGame() {
     to: targetSquare,
     ...(isPromotion && { promotion: 'q' })
   });
+
+  setMoveHistory(gameRef.current.history({ verbose: true }));
+  setHistoryIndex(gameRef.current.history().length);
 
   // 6️⃣ Update board + status
   setFen(gameRef.current.fen());
@@ -239,6 +246,8 @@ const resetGame = () => {
   setGameOver(false);
   setIsAiThinking(false);
   setHighlightSquares({});
+  setMoveHistory([]);
+  setHistoryIndex(0);
 };
 
   return (
