@@ -264,7 +264,14 @@ const resetGame = () => {
   return (
     <div style={{ textAlign: 'center' }}>
       <h1>Chess Playground</h1>
-      <p>{status} {isAiThinking ? ' — AI thinking...' : ''}</p>
+      <p>
+        {status}
+        {isAiThinking ? " — AI thinking..." : ""}
+      </p>
+
+      <p>
+        Move {historyIndex} / {moveHistory.length}
+      </p>
       {gameOver && (
   <div
     style={{
@@ -289,7 +296,10 @@ const resetGame = () => {
         onSquareClick={(square) => highlightLegalMoves(square)}
         onPieceDragBegin={(piece, sourceSquare) => highlightLegalMoves(sourceSquare)}
         boardWidth={600}
-        arePiecesDraggable={!isAiThinking && !gameOver}
+        arePiecesDraggable={
+          !isAiThinking &&
+          !gameOver &&
+          historyIndex === moveHistory.length}
         customSquareStyles={highlightSquares}
       />
       <div style={{ marginTop: '1rem' }}>
