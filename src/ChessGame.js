@@ -159,6 +159,8 @@ const requestHint = () => {
 };
 
 const goToMove = (index) => {
+  if (index < 0 || index > moveHistory.length) return;
+
   const replay = new Chess();
 
   moveHistory
