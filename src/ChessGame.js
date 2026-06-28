@@ -270,10 +270,11 @@ const resetGame = () => {
         {status}
         {isAiThinking ? " — AI thinking..." : ""}
       </p>
-
+    {historyIndex !== moveHistory.length && ( 
       <p>
         Viewing move {historyIndex} of {moveHistory.length}
       </p>
+    )}
       {gameOver && (
   <div
     style={{
