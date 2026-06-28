@@ -310,7 +310,7 @@ const resetGame = () => {
   onClick={() => goToMove(historyIndex - 1)}
   disabled={historyIndex <= 0}
 >
-  ←
+  ◀
 </button>
 
 <button
@@ -321,14 +321,14 @@ const resetGame = () => {
   disabled={historyIndex === moveHistory.length}
   style={{ margin: "0 8px" }}
 >
-  Live
+  ●
 </button>
 
 <button
   onClick={() => goToMove(historyIndex + 1)}
   disabled={historyIndex >= moveHistory.length}
 >
-  →
+  ▶
 </button>
   <button onClick={resetGame}>Reset Game</button>
 
