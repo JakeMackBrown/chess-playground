@@ -272,7 +272,7 @@ const resetGame = () => {
       </p>
 
       <p>
-        Move {historyIndex} / {moveHistory.length}
+        Viewing move {historyIndex} of {moveHistory.length}
       </p>
       {gameOver && (
   <div
