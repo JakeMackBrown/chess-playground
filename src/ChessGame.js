@@ -158,6 +158,17 @@ const requestHint = () => {
   engine.current.postMessage('go depth 12');
 };
 
+const goToMove = (index) => {
+  const replay = new Chess();
+
+  moveHistory
+    .slice(0, index)
+    .forEach(move => replay.move(move));
+
+  setFen(replay.fen());
+  setHistoryIndex(index);
+};
+
 const highlightLegalMoves = (square) => {
   const moves = gameRef.current.moves({
     square,
