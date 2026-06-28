@@ -312,7 +312,10 @@ const resetGame = () => {
 </button>
 
 <button
-  onClick={() => goToMove(moveHistory.length)}
+  onClick={() => {
+  setFen(gameRef.current.fen());
+  setHistoryIndex(moveHistory.length);
+  }}
   disabled={historyIndex === moveHistory.length}
   style={{ margin: "0 8px" }}
 >
